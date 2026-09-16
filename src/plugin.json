@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "Oh Dear",
+  "id": "softwarehuset-ohdear-datasource",
+  "metrics": true,
+  "backend": true,
+  "executable": "gpx_oh_dear",
+  "info": {
+    "description": "Visualize Oh Dear uptime, downtime, performance and Lighthouse data in Grafana.",
+    "author": {
+      "name": "Softwarehuset"
+    },
+    "keywords": ["datasource", "ohdear", "uptime", "monitoring"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [
+      {
+        "name": "Oh Dear API documentation",
+        "url": "https://ohdear.app/docs/integrations/the-oh-dear-api"
+      }
+    ],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=12.3.0",
+    "plugins": []
+  }
+}
