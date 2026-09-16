@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/softwarehuset/oh-dear/pkg/models"
+	"github.com/Softwarehuset-com/oh-dear-grafana-plugin/pkg/models"
 )
 
 // Monitor represents an Oh Dear monitor.

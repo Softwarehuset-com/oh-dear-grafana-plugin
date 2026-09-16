@@ -18,6 +18,18 @@
     },
     "links": [
       {
+        "name": "Website",
+        "url": "https://github.com/Softwarehuset-com/oh-dear-grafana-plugin"
+      },
+      {
+        "name": "Report an issue",
+        "url": "https://github.com/Softwarehuset-com/oh-dear-grafana-plugin/issues"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/Softwarehuset-com/oh-dear-grafana-plugin/blob/main/LICENSE"
+      },
+      {
         "name": "Oh Dear API documentation",
         "url": "https://ohdear.app/docs/integrations/the-oh-dear-api"
       }

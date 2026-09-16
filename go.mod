@@ -1,4 +1,4 @@
-module github.com/softwarehuset/oh-dear
+module github.com/Softwarehuset-com/oh-dear-grafana-plugin
 
 go 1.26.5
 
