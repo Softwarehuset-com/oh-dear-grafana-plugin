@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Softwarehuset-com/oh-dear-grafana-plugin/pkg/models"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/Softwarehuset-com/oh-dear-grafana-plugin/pkg/models"
 )
 
 // Make sure Datasource implements required interfaces. This is important to do
@@ -544,8 +544,8 @@ func (d *Datasource) CheckHealth(_ context.Context, _ *backend.CheckHealthReques
 func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	path := strings.TrimPrefix(req.Path, "/resources")
 
-	switch {
-	case path == "/monitors" || path == "":
+	switch path {
+	case "/monitors", "":
 		monitors, err := d.client.GetMonitors(ctx)
 		if err != nil {
 			message := err.Error()

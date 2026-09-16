@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/Softwarehuset-com/oh-dear-grafana-plugin/pkg/models"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 const monitorsPayload = `{
