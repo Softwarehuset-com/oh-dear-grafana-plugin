@@ -96,46 +96,48 @@ export function QueryEditor({ query, datasource, onChange, onRunQuery }: Props) 
   };
 
   return (
-    <Stack direction="column" gap={1}>
-      <Stack gap={0} wrap="wrap">
-        <InlineField label="Query type" labelWidth={16}>
-          <Combobox
-            id="query-editor-query-type"
-            options={queryTypeOptions}
-            value={queryType ?? null}
-            onChange={onQueryTypeChange}
-            width={28}
-          />
-        </InlineField>
-        {usesMonitor(queryType) && (
-          <InlineField label="Monitor" labelWidth={16} tooltip="Leave as All monitors to query every monitor">
+    <div aria-busy={loadingMonitors}>
+      <Stack direction="column" gap={1}>
+        <Stack gap={0} wrap="wrap">
+          <InlineField label="Query type" labelWidth={16}>
             <Combobox
-              id="query-editor-monitor"
-              options={monitors}
-              value={query.monitorId ?? ALL_MONITORS}
-              onChange={onMonitorChange}
-              loading={loadingMonitors}
-              width={32}
+              id="query-editor-query-type"
+              options={queryTypeOptions}
+              value={queryType ?? null}
+              onChange={onQueryTypeChange}
+              width={28}
             />
           </InlineField>
-        )}
-        {usesGroupBy(queryType) && (
-          <InlineField label="Group by" labelWidth={16}>
-            <Combobox
-              id="query-editor-group-by"
-              options={groupByOptions}
-              value={query.groupBy ?? 'hour'}
-              onChange={onGroupByChange}
-              width={16}
-            />
-          </InlineField>
+          {usesMonitor(queryType) && (
+            <InlineField label="Monitor" labelWidth={16} tooltip="Leave as All monitors to query every monitor">
+              <Combobox
+                id="query-editor-monitor"
+                options={monitors}
+                value={query.monitorId ?? ALL_MONITORS}
+                onChange={onMonitorChange}
+                loading={loadingMonitors}
+                width={32}
+              />
+            </InlineField>
+          )}
+          {usesGroupBy(queryType) && (
+            <InlineField label="Group by" labelWidth={16}>
+              <Combobox
+                id="query-editor-group-by"
+                options={groupByOptions}
+                value={query.groupBy ?? 'hour'}
+                onChange={onGroupByChange}
+                width={16}
+              />
+            </InlineField>
+          )}
+        </Stack>
+        {monitorError && (
+          <Alert title="Oh Dear" severity="warning">
+            {monitorError}
+          </Alert>
         )}
       </Stack>
-      {monitorError && (
-        <Alert title="Oh Dear" severity="warning">
-          {monitorError}
-        </Alert>
-      )}
-    </Stack>
+    </div>
   );
 }

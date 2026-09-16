@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -104,7 +105,7 @@ func (d *Datasource) query(ctx context.Context, q backend.DataQuery) backend.Dat
 	case QueryTypeTCPMetrics:
 		return d.queryTCPMetrics(ctx, qm, q.TimeRange)
 	case QueryTypeLighthouse:
-		return d.queryLighthouse(ctx, qm)
+		return d.queryLighthouse(ctx, qm, q.TimeRange)
 	default:
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("unknown query type %q", qm.QueryType))
 	}
@@ -260,8 +261,13 @@ func (d *Datasource) queryHTTPMetrics(ctx context.Context, qm queryModel, timeRa
 	if err != nil {
 		return apiErrorResponse(err)
 	}
+	monitors, err = monitorsOfType(monitors, "http", "HTTP metrics", qm.MonitorID > 0)
+	if err != nil {
+		return backend.ErrDataResponse(backend.StatusBadRequest, err.Error())
+	}
 
-	groupBy := defaultGroupBy(qm.GroupBy, "hour")
+	requested := defaultGroupBy(qm.GroupBy, "hour")
+	groupBy := fitGroupBy(requested, timeRange)
 
 	frames := make([]*data.Frame, 0, len(monitors))
 	for _, m := range monitors {
@@ -292,14 +298,16 @@ func (d *Datasource) queryHTTPMetrics(ctx context.Context, qm queryModel, timeRa
 			download = append(download, p.DownloadTimeInSeconds*1000)
 		}
 
-		frames = append(frames, newMultiValueFrame(m.Label, "HTTP timing (ms)", len(monitors) > 1, times,
+		frame := newMultiValueFrame(m.Label, "HTTP timing (ms)", len(monitors) > 1, times,
 			"Total", totals,
 			"DNS", dns,
 			"TCP", tcp,
 			"SSL handshake", ssl,
 			"Server processing", server,
 			"Download", download,
-		))
+		)
+		frame.AppendNotices(groupByNotice(requested, groupBy)...)
+		frames = append(frames, frame)
 	}
 
 	return framesResponse(frames)
@@ -310,8 +318,13 @@ func (d *Datasource) queryPingMetrics(ctx context.Context, qm queryModel, timeRa
 	if err != nil {
 		return apiErrorResponse(err)
 	}
+	monitors, err = monitorsOfType(monitors, "ping", "ping metrics", qm.MonitorID > 0)
+	if err != nil {
+		return backend.ErrDataResponse(backend.StatusBadRequest, err.Error())
+	}
 
-	groupBy := defaultGroupBy(qm.GroupBy, "hour")
+	requested := defaultGroupBy(qm.GroupBy, "hour")
+	groupBy := fitGroupBy(requested, timeRange)
 
 	frames := make([]*data.Frame, 0, len(monitors))
 	for _, m := range monitors {
@@ -340,13 +353,15 @@ func (d *Datasource) queryPingMetrics(ctx context.Context, qm queryModel, timeRa
 			uptime = append(uptime, p.UptimePercentage)
 		}
 
-		frames = append(frames, newMultiValueFrame(m.Label, "Ping metrics", len(monitors) > 1, times,
+		frame := newMultiValueFrame(m.Label, "Ping metrics", len(monitors) > 1, times,
 			"Average RTT (ms)", avg,
 			"Min RTT (ms)", mins,
 			"Max RTT (ms)", maxs,
 			"Packet loss (%)", packetLoss,
 			"Uptime (%)", uptime,
-		))
+		)
+		frame.AppendNotices(groupByNotice(requested, groupBy)...)
+		frames = append(frames, frame)
 	}
 
 	return framesResponse(frames)
@@ -357,8 +372,13 @@ func (d *Datasource) queryTCPMetrics(ctx context.Context, qm queryModel, timeRan
 	if err != nil {
 		return apiErrorResponse(err)
 	}
+	monitors, err = monitorsOfType(monitors, "tcp", "TCP metrics", qm.MonitorID > 0)
+	if err != nil {
+		return backend.ErrDataResponse(backend.StatusBadRequest, err.Error())
+	}
 
-	groupBy := defaultGroupBy(qm.GroupBy, "hour")
+	requested := defaultGroupBy(qm.GroupBy, "hour")
+	groupBy := fitGroupBy(requested, timeRange)
 
 	frames := make([]*data.Frame, 0, len(monitors))
 	for _, m := range monitors {
@@ -381,24 +401,30 @@ func (d *Datasource) queryTCPMetrics(ctx context.Context, qm queryModel, timeRan
 			uptime = append(uptime, p.UptimePercentage)
 		}
 
-		frames = append(frames, newMultiValueFrame(m.Label, "TCP metrics", len(monitors) > 1, times,
+		frame := newMultiValueFrame(m.Label, "TCP metrics", len(monitors) > 1, times,
 			"Time to connect (ms)", connect,
 			"Uptime (%)", uptime,
-		))
+		)
+		frame.AppendNotices(groupByNotice(requested, groupBy)...)
+		frames = append(frames, frame)
 	}
 
 	return framesResponse(frames)
 }
 
-func (d *Datasource) queryLighthouse(ctx context.Context, qm queryModel) backend.DataResponse {
+func (d *Datasource) queryLighthouse(ctx context.Context, qm queryModel, timeRange backend.TimeRange) backend.DataResponse {
 	monitors, err := d.monitorTargets(ctx, qm)
 	if err != nil {
 		return apiErrorResponse(err)
 	}
+	monitors, err = monitorsOfType(monitors, "http", "Lighthouse reports", qm.MonitorID > 0)
+	if err != nil {
+		return backend.ErrDataResponse(backend.StatusBadRequest, err.Error())
+	}
 
 	frames := make([]*data.Frame, 0, len(monitors))
 	for _, m := range monitors {
-		reports, err := d.client.GetLighthouseReports(ctx, m.ID)
+		reports, err := d.client.GetLighthouseReports(ctx, m.ID, timeRange.From, timeRange.To)
 		if err != nil {
 			return apiErrorResponse(err)
 		}
@@ -487,6 +513,61 @@ func defaultGroupBy(value, fallback string) string {
 	return value
 }
 
+func monitorsOfType(monitors []Monitor, monitorType, feature string, single bool) ([]Monitor, error) {
+	matched := make([]Monitor, 0, len(monitors))
+	for _, m := range monitors {
+		if m.Type == monitorType {
+			matched = append(matched, m)
+		}
+	}
+	if len(matched) > 0 {
+		return matched, nil
+	}
+	if single && len(monitors) == 1 {
+		return nil, fmt.Errorf("%s is a %s monitor, so %s are not available for it", monitors[0].Label, monitors[0].Type, feature)
+	}
+	return nil, fmt.Errorf("no %s monitors found in your Oh Dear account", monitorType)
+}
+
+const maxMetricPoints = 480
+
+var metricGroupBySteps = []struct {
+	name string
+	step time.Duration
+}{
+	{"minute", time.Minute},
+	{"hour", time.Hour},
+	{"day", 24 * time.Hour},
+	{"week", 7 * 24 * time.Hour},
+	{"month", 30 * 24 * time.Hour},
+}
+
+func fitGroupBy(groupBy string, timeRange backend.TimeRange) string {
+	span := timeRange.To.Sub(timeRange.From)
+	start := 0
+	for i, s := range metricGroupBySteps {
+		if s.name == groupBy {
+			start = i
+		}
+	}
+	for _, s := range metricGroupBySteps[start:] {
+		if int(span/s.step)+1 <= maxMetricPoints {
+			return s.name
+		}
+	}
+	return metricGroupBySteps[len(metricGroupBySteps)-1].name
+}
+
+func groupByNotice(requested, used string) []data.Notice {
+	if requested == used {
+		return nil
+	}
+	return []data.Notice{{
+		Severity: data.NoticeSeverityInfo,
+		Text:     fmt.Sprintf("Grouped by %s instead of %s to stay within the Oh Dear limit of 500 data points per request", used, requested),
+	}}
+}
+
 // apiErrorResponse converts Oh Dear client errors into data responses with
 // helpful messages.
 func apiErrorResponse(err error) backend.DataResponse {
@@ -506,7 +587,7 @@ func apiErrorResponse(err error) backend.DataResponse {
 }
 
 // CheckHealth handles health checks sent from Grafana to the plugin.
-func (d *Datasource) CheckHealth(_ context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (d *Datasource) CheckHealth(ctx context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	if d.settings.Secrets.Token == "" {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
@@ -514,7 +595,7 @@ func (d *Datasource) CheckHealth(_ context.Context, _ *backend.CheckHealthReques
 		}, nil
 	}
 
-	user, err := d.client.GetMe(context.Background())
+	user, err := d.client.GetMe(ctx)
 	if err != nil {
 		var apiErr *Error
 		if errors.As(err, &apiErr) && apiErr.Unauthorized() {
@@ -542,21 +623,18 @@ func (d *Datasource) CheckHealth(_ context.Context, _ *backend.CheckHealthReques
 
 // CallResource exposes the monitor list to the frontend for the query editor.
 func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	path := strings.TrimPrefix(req.Path, "/resources")
+	path := strings.Trim(strings.TrimPrefix(req.Path, "/resources"), "/")
 
 	switch path {
-	case "/monitors", "":
+	case "monitors", "":
 		monitors, err := d.client.GetMonitors(ctx)
 		if err != nil {
 			message := err.Error()
 			var apiErr *Error
-			if errors.As(err, &apiErr) {
-				if apiErr.Unauthorized() {
-					message = "Invalid Oh Dear API token"
-				}
-				return sender.Send(jsonResponse(apiErr.Status, message))
+			if errors.As(err, &apiErr) && apiErr.Unauthorized() {
+				message = "Invalid Oh Dear API token"
 			}
-			return sender.Send(jsonResponse(502, message))
+			return sender.Send(jsonResponse(http.StatusBadGateway, message))
 		}
 
 		items := make([]map[string]any, 0, len(monitors))
@@ -575,12 +653,12 @@ func (d *Datasource) CallResource(ctx context.Context, req *backend.CallResource
 			return err
 		}
 		return sender.Send(&backend.CallResourceResponse{
-			Status:  200,
+			Status:  http.StatusOK,
 			Headers: jsonContentType(),
 			Body:    body,
 		})
 	default:
-		return sender.Send(jsonResponse(404, "resource not found"))
+		return sender.Send(jsonResponse(http.StatusNotFound, "resource not found"))
 	}
 }
 

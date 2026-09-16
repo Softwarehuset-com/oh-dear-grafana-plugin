@@ -155,7 +155,7 @@ func (c *Client) Get(ctx context.Context, path string, query url.Values, out any
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return &Error{Status: resp.StatusCode, Message: fmt.Sprintf("Oh Dear API returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))}
+		return &Error{Status: resp.StatusCode, Message: apiErrorMessage(resp.StatusCode, body)}
 	}
 
 	if out != nil {
@@ -165,6 +165,16 @@ func (c *Client) Get(ctx context.Context, path string, query url.Values, out any
 	}
 
 	return nil
+}
+
+func apiErrorMessage(status int, body []byte) string {
+	var payload struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(body, &payload); err == nil && payload.Message != "" {
+		return fmt.Sprintf("Oh Dear API returned %d: %s", status, payload.Message)
+	}
+	return fmt.Sprintf("Oh Dear API returned %d: %s", status, strings.TrimSpace(string(body)))
 }
 
 // GetMonitors fetches all monitors for the account.
@@ -207,8 +217,8 @@ func (c *Client) GetMonitor(ctx context.Context, monitorID int64) (*Monitor, err
 // GetUptime fetches uptime percentages for a monitor in [from, to].
 func (c *Client) GetUptime(ctx context.Context, monitorID int64, from, to time.Time, split string) ([]UptimePoint, error) {
 	query := url.Values{}
-	query.Set("filter[started_at]", from.Format("20060102150405"))
-	query.Set("filter[ended_at]", to.Format("20060102150405"))
+	query.Set("filter[started_at]", from.UTC().Format("20060102150405"))
+	query.Set("filter[ended_at]", to.UTC().Format("20060102150405"))
 	if split != "" {
 		query.Set("split", split)
 	}
@@ -223,8 +233,8 @@ func (c *Client) GetUptime(ctx context.Context, monitorID int64, from, to time.T
 // GetDowntime fetches downtime periods for a monitor in [from, to].
 func (c *Client) GetDowntime(ctx context.Context, monitorID int64, from, to time.Time) ([]DowntimeRecord, error) {
 	query := url.Values{}
-	query.Set("filter[started_at]", from.Format("20060102150405"))
-	query.Set("filter[ended_at]", to.Format("20060102150405"))
+	query.Set("filter[started_at]", from.UTC().Format("20060102150405"))
+	query.Set("filter[ended_at]", to.UTC().Format("20060102150405"))
 
 	var result paginated
 	if err := c.Get(ctx, fmt.Sprintf("/monitors/%d/downtime", monitorID), query, &result); err != nil {
@@ -267,8 +277,8 @@ func (c *Client) GetTCPUptimeMetrics(ctx context.Context, monitorID int64, from,
 
 func (c *Client) getMetrics(ctx context.Context, monitorID int64, endpoint string, from, to time.Time, groupBy string, out any) error {
 	query := url.Values{}
-	query.Set("filter[start]", from.Format("20060102150405"))
-	query.Set("filter[end]", to.Format("20060102150405"))
+	query.Set("filter[start]", from.UTC().Format("20060102150405"))
+	query.Set("filter[end]", to.UTC().Format("20060102150405"))
 	if groupBy != "" {
 		query.Set("filter[group_by]", groupBy)
 	}
@@ -285,12 +295,13 @@ func (c *Client) getMetrics(ctx context.Context, monitorID int64, endpoint strin
 	return nil
 }
 
-// GetLighthouseReports fetches Lighthouse reports for a monitor.
-func (c *Client) GetLighthouseReports(ctx context.Context, monitorID int64) ([]LighthouseReport, error) {
+// GetLighthouseReports fetches Lighthouse reports created in [from, to] for a monitor.
+func (c *Client) GetLighthouseReports(ctx context.Context, monitorID int64, from, to time.Time) ([]LighthouseReport, error) {
 	var reports []LighthouseReport
 	pageNumber := 1
 	for {
 		query := url.Values{}
+		query.Set("filter[created_at]", from.UTC().Format("20060102150405"))
 		query.Set("page[number]", fmt.Sprintf("%d", pageNumber))
 		query.Set("page[size]", "200")
 
@@ -303,7 +314,11 @@ func (c *Client) GetLighthouseReports(ctx context.Context, monitorID int64) ([]L
 		if err := json.Unmarshal(result.Data, &page); err != nil {
 			return nil, err
 		}
-		reports = append(reports, page...)
+		for _, r := range page {
+			if created, err := parseOhDearTime(r.CreatedAt); err == nil && !created.After(to) {
+				reports = append(reports, r)
+			}
+		}
 
 		if result.Links.Next == "" || pageNumber >= 5 {
 			break

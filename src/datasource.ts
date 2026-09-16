@@ -13,7 +13,7 @@ export class DataSource extends DataSourceWithBackend<OhDearQuery, OhDearDataSou
   }
 
   async getMonitors(): Promise<OhDearMonitor[]> {
-    return this.getResource('monitors');
+    return this.getResource('monitors', undefined, { showErrorAlert: false });
   }
 
   filterQuery(query: OhDearQuery): boolean {

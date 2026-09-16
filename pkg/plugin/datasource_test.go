@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -184,7 +185,7 @@ func TestQueryHTTPMetricsConvertsSecondsToMilliseconds(t *testing.T) {
 	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/monitors/1":
-			_, _ = w.Write([]byte(`{"id": 1, "label": "Example"}`))
+			_, _ = w.Write([]byte(`{"id": 1, "type": "http", "label": "Example"}`))
 		case "/monitors/1/http-uptime-metrics":
 			if got := r.URL.Query().Get("filter[group_by]"); got != "hour" {
 				t.Errorf("expected group_by=hour, got %q", got)
@@ -280,24 +281,26 @@ func TestCallResourceMonitors(t *testing.T) {
 		_, _ = w.Write([]byte(monitorsPayload))
 	})
 
-	sender := &resourceSender{}
-	if err := ds.CallResource(context.Background(), &backend.CallResourceRequest{Path: "/monitors"}, sender); err != nil {
-		t.Fatal(err)
-	}
+	for _, path := range []string{"monitors", "/monitors", "/resources/monitors"} {
+		sender := &resourceSender{}
+		if err := ds.CallResource(context.Background(), &backend.CallResourceRequest{Path: path}, sender); err != nil {
+			t.Fatal(err)
+		}
 
-	if sender.response.Status != http.StatusOK {
-		t.Fatalf("expected 200, got %d", sender.response.Status)
-	}
+		if sender.response.Status != http.StatusOK {
+			t.Fatalf("path %q: expected 200, got %d", path, sender.response.Status)
+		}
 
-	var items []map[string]any
-	if err := json.Unmarshal(sender.response.Body, &items); err != nil {
-		t.Fatal(err)
-	}
-	if len(items) != 2 {
-		t.Fatalf("expected 2 monitors, got %d", len(items))
-	}
-	if items[0]["label"] != "Example" {
-		t.Errorf("unexpected first monitor %v", items[0])
+		var items []map[string]any
+		if err := json.Unmarshal(sender.response.Body, &items); err != nil {
+			t.Fatal(err)
+		}
+		if len(items) != 2 {
+			t.Fatalf("path %q: expected 2 monitors, got %d", path, len(items))
+		}
+		if items[0]["label"] != "Example" {
+			t.Errorf("path %q: unexpected first monitor %v", path, items[0])
+		}
 	}
 }
 
@@ -311,5 +314,157 @@ func TestCallResourceUnknownPath(t *testing.T) {
 
 	if sender.response.Status != http.StatusNotFound {
 		t.Errorf("expected 404, got %d", sender.response.Status)
+	}
+}
+
+func TestQueryHTTPMetricsCoarsensGroupByToStayUnderPointLimit(t *testing.T) {
+	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/monitors/1":
+			_, _ = w.Write([]byte(`{"id": 1, "type": "http", "label": "Example"}`))
+		case "/monitors/1/http-uptime-metrics":
+			if got := r.URL.Query().Get("filter[group_by]"); got != "day" {
+				t.Errorf("expected group_by=day for a 30 day range, got %q", got)
+			}
+			_, _ = w.Write([]byte(`{"data": [{"date": "2026-08-20 00:00:00", "total_time_in_seconds": 0.1}]}`))
+		default:
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+	})
+
+	q := queryJSON(t, queryModel{QueryType: QueryTypeHTTPMetrics, MonitorID: 1, GroupBy: "hour"})
+	q.TimeRange = backend.TimeRange{
+		From: time.Date(2026, 8, 17, 0, 0, 0, 0, time.UTC),
+		To:   time.Date(2026, 9, 16, 0, 0, 0, 0, time.UTC),
+	}
+
+	resp := ds.query(context.Background(), q)
+	if resp.Error != nil {
+		t.Fatal(resp.Error)
+	}
+	if resp.Frames[0].Meta == nil || len(resp.Frames[0].Meta.Notices) != 1 {
+		t.Fatalf("expected a notice about the coarser grouping, got %v", resp.Frames[0].Meta)
+	}
+}
+
+func TestQueryPingMetricsSkipsMonitorsOfOtherTypes(t *testing.T) {
+	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/monitors":
+			_, _ = w.Write([]byte(`{"data": [
+				{"id": 1, "type": "http", "label": "Site"},
+				{"id": 2, "type": "ping", "label": "Host"}
+			], "links": {"next": null}}`))
+		case "/monitors/2/ping-uptime-metrics":
+			_, _ = w.Write([]byte(`{"data": [{"date": "2026-09-15 10:00:00", "average_time_in_ms": 12.5}]}`))
+		default:
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+	})
+
+	resp := ds.query(context.Background(), queryJSON(t, queryModel{QueryType: QueryTypePingMetrics}))
+	if resp.Error != nil {
+		t.Fatal(resp.Error)
+	}
+	if len(resp.Frames) != 1 || resp.Frames[0].Name != "Host" {
+		t.Fatalf("expected only the ping monitor, got %d frames", len(resp.Frames))
+	}
+}
+
+func TestQueryTCPMetricsRejectsMonitorOfWrongType(t *testing.T) {
+	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/monitors/1" {
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+		_, _ = w.Write([]byte(`{"id": 1, "type": "http", "label": "Site"}`))
+	})
+
+	resp := ds.query(context.Background(), queryJSON(t, queryModel{QueryType: QueryTypeTCPMetrics, MonitorID: 1}))
+	if resp.Error == nil || !strings.Contains(resp.Error.Error(), "TCP metrics are not available") {
+		t.Fatalf("expected a clear type mismatch error, got %v", resp.Error)
+	}
+}
+
+func TestQueryLighthouseUsesTimeRange(t *testing.T) {
+	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/monitors/1":
+			_, _ = w.Write([]byte(`{"id": 1, "type": "http", "label": "Site"}`))
+		case "/monitors/1/lighthouse-reports":
+			if got := r.URL.Query().Get("filter[created_at]"); got != "20260915000000" {
+				t.Errorf("expected filter[created_at] to be the range start, got %q", got)
+			}
+			_, _ = w.Write([]byte(`{"data": [
+				{"created_at": "2026-09-15 06:00:00", "performance_score": 90},
+				{"created_at": "2026-09-17 06:00:00", "performance_score": 10}
+			], "links": {"next": null}}`))
+		default:
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+	})
+
+	resp := ds.query(context.Background(), queryJSON(t, queryModel{QueryType: QueryTypeLighthouse, MonitorID: 1}))
+	if resp.Error != nil {
+		t.Fatal(resp.Error)
+	}
+	if rows := resp.Frames[0].Rows(); rows != 1 {
+		t.Fatalf("expected reports after the range end to be dropped, got %d rows", rows)
+	}
+}
+
+func TestQueryFormatsTimeRangeInUTC(t *testing.T) {
+	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/monitors/1":
+			_, _ = w.Write([]byte(`{"id": 1, "type": "http", "label": "Site"}`))
+		case "/monitors/1/uptime":
+			if got := r.URL.Query().Get("filter[started_at]"); got != "20260915000000" {
+				t.Errorf("expected the range start in UTC, got %q", got)
+			}
+			_, _ = w.Write([]byte(`[]`))
+		default:
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+	})
+
+	cest := time.FixedZone("CEST", 2*60*60)
+	q := queryJSON(t, queryModel{QueryType: QueryTypeUptime, MonitorID: 1})
+	q.TimeRange = backend.TimeRange{
+		From: time.Date(2026, 9, 15, 2, 0, 0, 0, cest),
+		To:   time.Date(2026, 9, 16, 2, 0, 0, 0, cest),
+	}
+
+	if resp := ds.query(context.Background(), q); resp.Error != nil {
+		t.Fatal(resp.Error)
+	}
+}
+
+func TestAPIErrorsUseTheMessageFromOhDear(t *testing.T) {
+	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte(`{"message": "The split field is required.", "errors": {"split": ["The split field is required."]}}`))
+	})
+
+	resp := ds.query(context.Background(), queryJSON(t, queryModel{QueryType: QueryTypeMonitors}))
+	if resp.Error == nil || resp.Error.Error() != "Oh Dear API returned 422: The split field is required." {
+		t.Fatalf("unexpected error %v", resp.Error)
+	}
+}
+
+func TestCallResourceDoesNotForwardOhDearAuthStatus(t *testing.T) {
+	ds, _ := newTestDatasource(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	})
+
+	sender := &resourceSender{}
+	if err := ds.CallResource(context.Background(), &backend.CallResourceRequest{Path: "monitors"}, sender); err != nil {
+		t.Fatal(err)
+	}
+
+	if sender.response.Status != http.StatusBadGateway {
+		t.Fatalf("expected 502 so Grafana does not treat it as an expired session, got %d", sender.response.Status)
+	}
+	if !strings.Contains(string(sender.response.Body), "Invalid Oh Dear API token") {
+		t.Errorf("unexpected body %s", sender.response.Body)
 	}
 }
