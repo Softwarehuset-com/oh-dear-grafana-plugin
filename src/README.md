@@ -37,7 +37,7 @@ Leave the monitor picker on **All monitors** to get one series per monitor. Time
 
 ## Sample dashboard
 
-The repository provisions a sample dashboard (`provisioning/dashboards/oh-dear-sample.json`) that queries every monitor in your account. See [provisioning/README.md](../provisioning/README.md) for how to run it.
+The repository provisions a sample dashboard that queries every monitor in your account. See [provisioning/README.md](https://github.com/Softwarehuset-com/oh-dear-grafana-plugin/blob/main/provisioning/README.md) for how to run it.
 
 ## Learn more
 
@@ -45,4 +45,4 @@ The repository provisions a sample dashboard (`provisioning/dashboards/oh-dear-s
 
 ## Disclaimer and license
 
-This is an independent community plugin. It is not affiliated with, endorsed by, or sponsored by Oh Dear (ohdear.app). The plugin is provided "as is", without warranty of any kind. It is licensed under the [MIT License](../LICENSE).
+This is an independent community plugin. It is not affiliated with, endorsed by, or sponsored by Oh Dear (ohdear.app). The plugin is provided "as is", without warranty of any kind. It is licensed under the [MIT License](https://github.com/Softwarehuset-com/oh-dear-grafana-plugin/blob/main/LICENSE).
