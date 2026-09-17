@@ -35,6 +35,9 @@ artifacts/
 work/
 ci/
 
+# local secrets (Oh Dear API token for the provisioned data source)
+.env
+
 # e2e test directories
 /test-results/
 /playwright-report/

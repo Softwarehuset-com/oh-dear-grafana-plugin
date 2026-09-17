@@ -20,7 +20,7 @@ mage -v              # backend binaries
 npm run server       # Grafana in Docker with the plugin mounted
 ```
 
-Provide a token for the provisioned data source through the `OHDEAR_API_TOKEN` environment variable.
+Put your Oh Dear API token in a `.env` file next to `docker-compose.yaml` (`OHDEAR_API_TOKEN=<token>`); the container picks it up for the provisioned data source. A provisioned sample dashboard (`provisioning/dashboards/oh-dear-sample.json`) shows every monitor in the account, see `provisioning/README.md`.
 
 ```bash
 npm run typecheck

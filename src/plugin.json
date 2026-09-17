@@ -34,7 +34,24 @@
         "url": "https://ohdear.app/docs/integrations/the-oh-dear-api"
       }
     ],
-    "screenshots": [],
+    "screenshots": [
+      {
+        "name": "Sample dashboard",
+        "path": "img/screenshot-dashboard.png"
+      },
+      {
+        "name": "Uptime",
+        "path": "img/screenshot-uptime.png"
+      },
+      {
+        "name": "HTTP metrics",
+        "path": "img/screenshot-http-metrics.png"
+      },
+      {
+        "name": "Monitors",
+        "path": "img/screenshot-monitors.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

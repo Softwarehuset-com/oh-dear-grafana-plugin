@@ -1,0 +1,474 @@
+{
+ "title": "Oh Dear \u2013 Sample",
+ "uid": "ohdear-sample",
+ "tags": [
+  "ohdear",
+  "sample"
+ ],
+ "timezone": "browser",
+ "editable": true,
+ "graphTools": false,
+ "style": "dark",
+ "version": 1,
+ "refresh": "",
+ "time": {
+  "from": "now-30d",
+  "to": "now"
+ },
+ "panels": [
+  {
+   "datasource": {
+    "type": "softwarehuset-ohdear-datasource",
+    "uid": "ohdear"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      },
+      "footer": {
+       "reducers": []
+      },
+      "inspect": false
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": 0
+       },
+       {
+        "color": "red",
+        "value": 80
+       }
+      ]
+     }
+    }
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 0
+   },
+   "id": 1,
+   "options": {
+    "cellHeight": "sm",
+    "showHeader": true
+   },
+   "pluginVersion": "13.1.0",
+   "targets": [
+    {
+     "datasource": {
+      "type": "softwarehuset-ohdear-datasource",
+      "uid": "ohdear"
+     },
+     "queryType": "monitors",
+     "refId": "A",
+     "monitorId": null
+    }
+   ],
+   "title": "Monitors",
+   "type": "table"
+  },
+  {
+   "datasource": {
+    "type": "softwarehuset-ohdear-datasource",
+    "uid": "ohdear"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "palette-classic"
+     },
+     "custom": {
+      "axisBorderShow": false,
+      "axisCenteredZero": false,
+      "axisColorMode": "text",
+      "axisLabel": "",
+      "axisPlacement": "auto",
+      "barAlignment": 0,
+      "barWidthFactor": 0.6,
+      "drawStyle": "line",
+      "fillOpacity": 0,
+      "gradientMode": "none",
+      "hideFrom": {
+       "legend": false,
+       "tooltip": false,
+       "viz": false
+      },
+      "insertNulls": false,
+      "lineInterpolation": "linear",
+      "lineWidth": 2,
+      "pointSize": 5,
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "showPoints": "auto",
+      "showValues": false,
+      "spanNulls": false,
+      "stacking": {
+       "group": "A",
+       "mode": "none"
+      },
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "max": 100,
+     "min": 90,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": 0
+       },
+       {
+        "color": "red",
+        "value": 80
+       }
+      ]
+     },
+     "unit": "percent"
+    }
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 0
+   },
+   "id": 2,
+   "options": {
+    "annotations": {
+     "clustering": -1,
+     "multiLane": false
+    },
+    "legend": {
+     "calcs": [],
+     "displayMode": "list",
+     "enableFacetedFilter": false,
+     "overflow": "ellipsis",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "hideZeros": false,
+     "mode": "single",
+     "sort": "none"
+    }
+   },
+   "pluginVersion": "13.1.0",
+   "targets": [
+    {
+     "datasource": {
+      "type": "softwarehuset-ohdear-datasource",
+      "uid": "ohdear"
+     },
+     "groupBy": "day",
+     "monitorId": 0,
+     "queryType": "uptime",
+     "refId": "A"
+    }
+   ],
+   "title": "Uptime \u2013 all monitors",
+   "type": "timeseries"
+  },
+  {
+   "datasource": {
+    "type": "softwarehuset-ohdear-datasource",
+    "uid": "ohdear"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      },
+      "footer": {
+       "reducers": []
+      },
+      "inspect": false
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": 0
+       },
+       {
+        "color": "red",
+        "value": 80
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Duration (min)"
+      },
+      "properties": [
+       {
+        "id": "decimals",
+        "value": 1
+       }
+      ]
+     }
+    ]
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 8
+   },
+   "id": 3,
+   "options": {
+    "cellHeight": "sm",
+    "showHeader": true,
+    "sortBy": [
+     {
+      "desc": true,
+      "displayName": "Started at"
+     }
+    ]
+   },
+   "pluginVersion": "13.1.0",
+   "targets": [
+    {
+     "datasource": {
+      "type": "softwarehuset-ohdear-datasource",
+      "uid": "ohdear"
+     },
+     "monitorId": 0,
+     "queryType": "downtime",
+     "refId": "A",
+     "groupBy": null
+    }
+   ],
+   "title": "Downtime periods \u2013 all monitors",
+   "type": "table"
+  },
+  {
+   "datasource": {
+    "type": "softwarehuset-ohdear-datasource",
+    "uid": "ohdear"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "palette-classic"
+     },
+     "custom": {
+      "axisBorderShow": false,
+      "axisCenteredZero": false,
+      "axisColorMode": "text",
+      "axisLabel": "",
+      "axisPlacement": "auto",
+      "barAlignment": 0,
+      "barWidthFactor": 0.6,
+      "drawStyle": "line",
+      "fillOpacity": 25,
+      "gradientMode": "none",
+      "hideFrom": {
+       "legend": false,
+       "tooltip": false,
+       "viz": false
+      },
+      "insertNulls": false,
+      "lineInterpolation": "linear",
+      "lineWidth": 1,
+      "pointSize": 5,
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "showPoints": "auto",
+      "showValues": false,
+      "spanNulls": false,
+      "stacking": {
+       "group": "A",
+       "mode": "none"
+      },
+      "thresholdsStyle": {
+       "mode": "off"
+      }
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": 0
+       },
+       {
+        "color": "red",
+        "value": 80
+       }
+      ]
+     },
+     "unit": "ms"
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Total"
+      },
+      "properties": [
+       {
+        "id": "custom.lineWidth",
+        "value": 2
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 0
+       }
+      ]
+     }
+    ]
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 8
+   },
+   "id": 4,
+   "options": {
+    "annotations": {
+     "clustering": -1,
+     "multiLane": false
+    },
+    "legend": {
+     "calcs": [],
+     "displayMode": "list",
+     "enableFacetedFilter": false,
+     "overflow": "ellipsis",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "hideZeros": false,
+     "mode": "single",
+     "sort": "none"
+    }
+   },
+   "pluginVersion": "13.1.0",
+   "targets": [
+    {
+     "datasource": {
+      "type": "softwarehuset-ohdear-datasource",
+      "uid": "ohdear"
+     },
+     "groupBy": "day",
+     "monitorId": 0,
+     "queryType": "http-uptime-metrics",
+     "refId": "A"
+    }
+   ],
+   "title": "HTTP metrics \u2013 all monitors",
+   "type": "timeseries"
+  },
+  {
+   "datasource": {
+    "type": "softwarehuset-ohdear-datasource",
+    "uid": "ohdear"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "thresholds"
+     },
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": 0
+       },
+       {
+        "color": "orange",
+        "value": 50
+       },
+       {
+        "color": "green",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byRegexp",
+       "options": ".*\\(ms\\)"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "ms"
+       },
+       {
+        "id": "color",
+        "value": {
+         "fixedColor": "blue",
+         "mode": "fixed"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "gridPos": {
+    "h": 6,
+    "w": 24,
+    "x": 0,
+    "y": 16
+   },
+   "id": 5,
+   "options": {
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto",
+    "orientation": "auto",
+    "percentChangeColorMode": "standard",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "showPercentChange": false,
+    "textMode": "value_and_name",
+    "wideLayout": true
+   },
+   "pluginVersion": "13.1.0",
+   "targets": [
+    {
+     "datasource": {
+      "type": "softwarehuset-ohdear-datasource",
+      "uid": "ohdear"
+     },
+     "monitorId": 0,
+     "queryType": "lighthouse",
+     "refId": "A",
+     "groupBy": null
+    }
+   ],
+   "timeFrom": "90d",
+   "title": "Lighthouse \u2013 all monitors (latest)",
+   "type": "stat"
+  }
+ ],
+ "schemaVersion": 42
+}
