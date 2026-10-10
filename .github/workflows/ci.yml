@@ -9,6 +9,10 @@ on:
     branches:
       - master
       - main
+  schedule:
+    # Weekly, Monday 05:17 UTC — catches new CVEs in unchanged dependencies
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -129,6 +133,71 @@ jobs:
           name: ${{ steps.metadata.outputs.plugin-id }}-${{ steps.metadata.outputs.plugin-version }}
           path: ${{ steps.metadata.outputs.plugin-id }}
           retention-days: 5
+
+  security:
+    name: Security scans (osv-scanner + govulncheck)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Go environment
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Scan npm lockfile with osv-scanner
+        run: >
+          go run github.com/google/osv-scanner/v2/cmd/osv-scanner@latest scan
+          --lockfile package-lock.json --format json > "$RUNNER_TEMP/osv.json" || true
+
+      - name: Fail on HIGH/CRITICAL npm vulnerabilities
+        shell: python
+        run: |
+          import json, os, sys
+
+          try:
+              with open(os.path.join(os.environ['RUNNER_TEMP'], 'osv.json')) as f:
+                  d = json.load(f)
+          except Exception as e:
+              print(f"osv-scanner produced no valid JSON: {e}")
+              sys.exit(1)
+
+          bad = []
+          for res in d.get('results', []):
+              for pkg in res.get('packages', []):
+                  p = pkg.get('package', {})
+                  for v in pkg.get('vulnerabilities', []):
+                      sev = (v.get('database_specific') or {}).get('severity', '')
+                      if sev.upper() in ('HIGH', 'CRITICAL'):
+                          bad.append(f"{p.get('name')}@{p.get('version')} {v['id']} ({sev})")
+
+          if bad:
+              print('HIGH/CRITICAL vulnerabilities found:')
+              for b in bad:
+                  print(' -', b)
+              sys.exit(1)
+          print('No HIGH/CRITICAL vulnerabilities.')
+
+      - name: Scan Go source with govulncheck (reachable vulnerabilities)
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+      - name: Build backend binaries
+        uses: magefile/mage-action@a662bd8c29d8106879588cfff83b2faf6e6f59db # v4.0.0
+        with:
+          version: latest
+          args: buildAll
+
+      - name: Scan backend binaries with govulncheck (binary mode)
+        run: |
+          status=0
+          for bin in dist/gpx_*; do
+            echo "Scanning $bin"
+            go run golang.org/x/vuln/cmd/govulncheck@latest -mode binary "$bin" || status=1
+          done
+          exit $status
 
   resolve-versions:
     name: Resolve e2e images
