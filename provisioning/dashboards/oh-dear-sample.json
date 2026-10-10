@@ -18,7 +18,7 @@
  "panels": [
   {
    "datasource": {
-    "type": "softwarehuset-ohdear-datasource",
+    "type": "softwarehusetcom-ohdear-datasource",
     "uid": "ohdear"
    },
    "fieldConfig": {
@@ -63,7 +63,7 @@
    "targets": [
     {
      "datasource": {
-      "type": "softwarehuset-ohdear-datasource",
+      "type": "softwarehusetcom-ohdear-datasource",
       "uid": "ohdear"
      },
      "queryType": "monitors",
@@ -76,7 +76,7 @@
   },
   {
    "datasource": {
-    "type": "softwarehuset-ohdear-datasource",
+    "type": "softwarehusetcom-ohdear-datasource",
     "uid": "ohdear"
    },
    "fieldConfig": {
@@ -166,7 +166,7 @@
    "targets": [
     {
      "datasource": {
-      "type": "softwarehuset-ohdear-datasource",
+      "type": "softwarehusetcom-ohdear-datasource",
       "uid": "ohdear"
      },
      "groupBy": "day",
@@ -180,7 +180,7 @@
   },
   {
    "datasource": {
-    "type": "softwarehuset-ohdear-datasource",
+    "type": "softwarehusetcom-ohdear-datasource",
     "uid": "ohdear"
    },
    "fieldConfig": {
@@ -245,7 +245,7 @@
    "targets": [
     {
      "datasource": {
-      "type": "softwarehuset-ohdear-datasource",
+      "type": "softwarehusetcom-ohdear-datasource",
       "uid": "ohdear"
      },
      "monitorId": 0,
@@ -259,7 +259,7 @@
   },
   {
    "datasource": {
-    "type": "softwarehuset-ohdear-datasource",
+    "type": "softwarehusetcom-ohdear-datasource",
     "uid": "ohdear"
    },
    "fieldConfig": {
@@ -365,7 +365,7 @@
    "targets": [
     {
      "datasource": {
-      "type": "softwarehuset-ohdear-datasource",
+      "type": "softwarehusetcom-ohdear-datasource",
       "uid": "ohdear"
      },
      "groupBy": "day",
@@ -379,7 +379,7 @@
   },
   {
    "datasource": {
-    "type": "softwarehuset-ohdear-datasource",
+    "type": "softwarehusetcom-ohdear-datasource",
     "uid": "ohdear"
    },
    "fieldConfig": {
@@ -456,7 +456,7 @@
    "targets": [
     {
      "datasource": {
-      "type": "softwarehuset-ohdear-datasource",
+      "type": "softwarehusetcom-ohdear-datasource",
       "uid": "ohdear"
      },
      "monitorId": 0,

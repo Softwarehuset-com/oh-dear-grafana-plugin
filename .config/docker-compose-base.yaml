@@ -1,7 +1,7 @@
 services:
   grafana:
     user: root
-    container_name: 'softwarehuset-ohdear-datasource'
+    container_name: 'softwarehusetcom-ohdear-datasource'
 
     build:
       context: .
@@ -19,13 +19,13 @@ services:
     cap_add:
       - SYS_PTRACE
     volumes:
-      - ../dist:/var/lib/grafana/plugins/softwarehuset-ohdear-datasource
+      - ../dist:/var/lib/grafana/plugins/softwarehusetcom-ohdear-datasource
       - ../provisioning:/etc/grafana/provisioning
-      - ..:/root/softwarehuset-ohdear-datasource
+      - ..:/root/softwarehusetcom-ohdear-datasource
 
     environment:
       NODE_ENV: development
-      GF_LOG_FILTERS: plugin.softwarehuset-ohdear-datasource:debug
+      GF_LOG_FILTERS: plugin.softwarehusetcom-ohdear-datasource:debug
       GF_LOG_LEVEL: debug
       GF_DATAPROXY_LOGGING: 1
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: softwarehuset-ohdear-datasource
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: softwarehusetcom-ohdear-datasource

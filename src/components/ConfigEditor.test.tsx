@@ -11,7 +11,7 @@ const setup = (secureJsonFields: Record<string, boolean> = {}) => {
     id: 1,
     uid: 'ohdear',
     name: 'Oh Dear',
-    type: 'softwarehuset-ohdear-datasource',
+    type: 'softwarehusetcom-ohdear-datasource',
     typeName: 'Oh Dear',
     typeLogoUrl: '',
     access: 'proxy',

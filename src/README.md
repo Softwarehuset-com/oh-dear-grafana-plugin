@@ -1,6 +1,6 @@
 # Oh Dear data source for Grafana
 
-[![Grafana plugin](https://img.shields.io/badge/Grafana-plugin-blue)](https://grafana.com/plugins/softwarehuset-ohdear-datasource)
+[![Grafana plugin](https://img.shields.io/badge/Grafana-plugin-blue)](https://grafana.com/plugins/softwarehusetcom-ohdear-datasource)
 [![CI](https://img.shields.io/github/actions/workflow/status/Softwarehuset-com/oh-dear-grafana-plugin/ci.yml)](https://github.com/Softwarehuset-com/oh-dear-grafana-plugin/actions)
 
 Visualize your [Oh Dear](https://ohdear.app) monitoring data in Grafana: uptime, downtime, HTTP/ping/TCP response timings and Lighthouse scores, for a single monitor or every monitor in your account.
