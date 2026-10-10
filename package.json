@@ -20,14 +20,13 @@
     "lint:fix": "npm run lint -- --fix && prettier --write --list-different .",
     "e2e": "playwright test",
     "server": "docker compose up --build",
-    "sign": "sign-plugin"
+    "sign": "npx -y @grafana/sign-plugin@latest"
   },
   "author": "Softwarehuset",
   "license": "MIT",
   "devDependencies": {
     "@grafana/eslint-config": "^9.0.0",
     "@grafana/plugin-e2e": "^3.11.0",
-    "@grafana/sign-plugin": "^3.3.3",
     "@grafana/tsconfig": "^2.2.0",
     "@playwright/test": "^1.62.1",
     "@stylistic/eslint-plugin-ts": "^4.4.0",
@@ -37,7 +36,7 @@
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.7",
-    "@types/jest": "^29.5.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
@@ -50,13 +49,12 @@
     "eslint-plugin-jsdoc": "^52.0.0",
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-react-hooks": "^7.0.0",
-    "eslint-webpack-plugin": "^5.0.0",
     "fork-ts-checker-webpack-plugin": "^9.1.0",
     "glob": "^11.1.0",
     "identity-obj-proxy": "^3.0.0",
     "imports-loader": "^5.0.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
     "prettier": "^3.6.0",
     "replace-in-file-webpack-plugin": "^1.0.0",
     "sass": "^1.89.0",
@@ -86,5 +84,8 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
-  "packageManager": "npm@11.16.0"
+  "packageManager": "npm@11.16.0",
+  "overrides": {
+    "source-map-js": "1.2.2"
+  }
 }
