@@ -53,5 +53,8 @@ ci/
 # npx / validator cache
 .cache/
 
+# git worktrees
+.worktrees/
+
 # packaged plugin archives
 *.zip
