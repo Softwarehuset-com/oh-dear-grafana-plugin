@@ -1,6 +1,8 @@
 module github.com/Softwarehuset-com/oh-dear-grafana-plugin
 
-go 1.27.2
+go 1.27.1
+
+toolchain go1.27.2
 
 require github.com/grafana/grafana-plugin-sdk-go v0.296.5
 
